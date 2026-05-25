@@ -13,8 +13,8 @@ from fastapi.middleware.cors import CORSMiddleware
 # Initialize the app
 app = FastAPI()
 
-from config import settings
-print(f"SECRET_KEY loaded: {settings.SECRET_KEY}")
+# from config import settings
+# print(f"SECRET_KEY loaded: {settings.SECRET_KEY}")
 
 # CORS middleware
 app.add_middleware(
