@@ -1,0 +1,18 @@
+[
+  {
+    "title": "Sulamuni Pagoda",
+    "images": ["/static/images/sulamuni.jpg"],
+    "rating": 4.8,
+    "description": "An iconic pagoda...",
+    "category": "Religious",
+    "subcategory": "Religious Site",
+    "address": "Sulamuni Rd, Taunggyi, Myanmar",
+    "phone": ["+95 81 21235"],
+    "website": "https://example.com/sulamuni",
+    "opening_hours": ["Mon-Fri: 7:00-19:00", "Sat-Sun: 9:00-17:00"],
+    "latitude": 20.7811,
+    "longitude": 97.0371,
+    "is_famous": true,
+    "is_popular": true
+  }
+]

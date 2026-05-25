@@ -1,0 +1,855 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>TGI Directory - Admin Dashboard</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        body {
+            font-family: 'Inter', sans-serif;
+        }
+        .sidebar-link.active {
+            background-color: #3b82f6;
+            color: white;
+            font-weight: 600;
+        }
+        .sidebar-link.active .link-icon {
+            color: white;
+        }
+        .sidebar-link:not(.active):hover {
+            background-color: #f3f4f6;
+        }
+        .stat-card:hover {
+            transform: translateY(-4px);
+            box-shadow: 0 10px 20px rgba(0,0,0,0.1);
+        }
+        .stat-card {
+            transition: all 0.3s ease;
+        }
+        .modal, .login-overlay {
+            animation: fadeIn 0.3s ease-out;
+        }
+        @keyframes fadeIn {
+            from { opacity: 0; }
+            to { opacity: 1; }
+        }
+
+        /* Category Manager Specific Styles */
+        .sidebar-cat { /* Renamed to avoid conflict with main dashboard sidebar */
+            transition: all 0.3s ease;
+        }
+        .translation-card:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05);
+        }
+        .label-item:hover, .sublabel-item:hover {
+            background-color: rgba(59, 130, 246, 0.05);
+        }
+        .label-item.active, .sublabel-item.active {
+            background-color: rgba(59, 130, 246, 0.1);
+            border-left: 3px solid #3b82f6;
+            font-weight: 600;
+            color: #1e40af;
+        }
+        .language-tab {
+            transition: all 0.2s ease-in-out;
+            border-bottom: 2px solid transparent;
+        }
+        .language-tab.active {
+            border-bottom: 2px solid #3b82f6;
+            color: #3b82f6;
+        }
+        .status-badge {
+            font-size: 0.7rem;
+            padding: 0.2rem 0.5rem;
+            border-radius: 9999px;
+            font-weight: 600;
+            text-transform: uppercase;
+        }
+        .status-translated { background-color: #dcfce7; color: #166534; }
+        .status-pending { background-color: #fef9c3; color: #854d0e; }
+        .status-empty { background-color: #fee2e2; color: #991b1b; }
+        .sublabel-item {
+            padding-left: 2rem;
+        }
+    </style>
+</head>
+<body class="bg-gray-100">
+
+    <!-- Login Screen -->
+    <div id="login-overlay" class="fixed inset-0 bg-gray-900 bg-opacity-80 flex items-center justify-center z-50">
+        <div class="bg-white p-8 rounded-lg shadow-2xl w-full max-w-sm">
+            <div class="text-center mb-6">
+                <i class="fas fa-compass text-4xl text-blue-600"></i>
+                <h1 class="text-2xl font-bold text-gray-800 mt-2">TGI Directory Admin</h1>
+            </div>
+            <form id="login-form">
+                <div class="mb-4">
+                    <label for="username" class="block text-sm font-medium text-gray-700">Username</label>
+                    <input type="text" id="username" value="admin" class="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500">
+                </div>
+                <div class="mb-6">
+                    <label for="password" class="block text-sm font-medium text-gray-700">Password</label>
+                    <input type="password" id="password" value="password" class="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500">
+                </div>
+                <button type="submit" class="w-full bg-blue-600 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded-lg focus:outline-none focus:shadow-outline">
+                    Log In
+                </button>
+            </form>
+        </div>
+    </div>
+
+    <!-- Main Admin Layout (Initially Hidden) -->
+    <div id="admin-layout" class="hidden h-screen flex">
+        <!-- Sidebar -->
+        <aside class="w-64 bg-white border-r border-gray-200 flex flex-col flex-shrink-0">
+            <div class="p-4 border-b h-16 flex items-center">
+                <i class="fas fa-compass text-2xl text-blue-600 mr-3"></i>
+                <h1 class="text-xl font-bold text-gray-800">TGI Directory</h1>
+            </div>
+            <nav id="main-nav" class="flex-1 p-4 space-y-2">
+                <a href="#dashboard" class="sidebar-link active flex items-center px-4 py-2 rounded-lg text-gray-700" data-target="dashboard-page">
+                    <i class="fas fa-tachometer-alt fa-fw mr-3 link-icon text-gray-500"></i>
+                    <span>Dashboard</span>
+                </a>
+                <a href="#categories" class="sidebar-link flex items-center px-4 py-2 rounded-lg text-gray-700" data-target="categories-page">
+                    <i class="fas fa-tags fa-fw mr-3 link-icon text-gray-500"></i>
+                    <span>Category Manager</span>
+                </a>
+                <a href="#businesses" class="sidebar-link flex items-center px-4 py-2 rounded-lg text-gray-700" data-target="businesses-page">
+                    <i class="fas fa-briefcase fa-fw mr-3 link-icon text-gray-500"></i>
+                    <span>TGI Business Manager</span>
+                </a>
+                <a href="#ads" class="sidebar-link flex items-center px-4 py-2 rounded-lg text-gray-700" data-target="ads-page">
+                    <i class="fas fa-bullhorn fa-fw mr-3 link-icon text-gray-500"></i>
+                    <span>Advertisement Manager</span>
+                </a>
+            </nav>
+            <div class="p-4 border-t">
+                <button id="logout-btn" class="w-full flex items-center justify-center px-4 py-2 rounded-lg text-red-600 bg-red-50 hover:bg-red-100">
+                    <i class="fas fa-sign-out-alt fa-fw mr-2"></i>
+                    <span>Logout</span>
+                </button>
+            </div>
+        </aside>
+
+        <!-- Main Content -->
+        <div class="flex-1 flex flex-col">
+            <header class="bg-white border-b h-16 flex items-center justify-between px-6">
+                <h2 id="page-title" class="text-xl font-semibold text-gray-800">Dashboard</h2>
+                <div class="flex items-center space-x-4">
+                    <p class="text-sm text-gray-600">Welcome, <span class="font-bold">Admin</span></p>
+                    <div class="w-10 h-10 rounded-full bg-blue-600 flex items-center justify-center text-white font-bold text-lg">A</div>
+                </div>
+            </header>
+            <main class="flex-1 overflow-y-auto p-6">
+                <!-- Page Content will be loaded here -->
+                <div id="dashboard-page" class="page-content">
+                    <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+                        <div class="stat-card bg-white p-6 rounded-lg shadow-md border-l-4 border-blue-500">
+                            <h3 class="text-gray-500 font-medium">Total Businesses</h3>
+                            <p class="text-3xl font-bold mt-2">1,254</p>
+                        </div>
+                        <div class="stat-card bg-white p-6 rounded-lg shadow-md border-l-4 border-green-500">
+                            <h3 class="text-gray-500 font-medium">Categories</h3>
+                            <p class="text-3xl font-bold mt-2">58</p>
+                        </div>
+                        <div class="stat-card bg-white p-6 rounded-lg shadow-md border-l-4 border-yellow-500">
+                            <h3 class="text-gray-500 font-medium">Active Ads</h3>
+                            <p class="text-3xl font-bold mt-2">32</p>
+                        </div>
+                        <div class="stat-card bg-white p-6 rounded-lg shadow-md border-l-4 border-red-500">
+                            <h3 class="text-gray-500 font-medium">Pending Approvals</h3>
+                            <p class="text-3xl font-bold mt-2">4</p>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Category Manager Page Content -->
+                <div id="categories-page" class="page-content hidden h-full">
+                    <div class="flex h-full bg-white rounded-lg shadow-md overflow-hidden border border-gray-200">
+                        <!-- Category Manager Sidebar -->
+                        <div class="sidebar-cat w-72 bg-white border-r border-gray-200 flex flex-col flex-shrink-0">
+                            <div class="p-4 border-b border-gray-200">
+                                <h1 class="text-xl font-bold text-gray-800 flex items-center">
+                                    <i class="fas fa-tags mr-3 text-blue-600"></i>
+                                    Category Manager
+                                </h1>
+                                <div class="mt-4 relative">
+                                    <input type="text" id="search-input" placeholder="Search categories..."
+                                           class="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500">
+                                    <i class="fas fa-search absolute left-3 top-1/2 -translate-y-1/2 text-gray-400"></i>
+                                </div>
+                            </div>
+
+                            <div class="flex-1 overflow-y-auto">
+                                <div class="p-4">
+                                    <div class="flex justify-between items-center mb-2">
+                                        <h2 class="font-semibold text-gray-700">Categories</h2>
+                                        <button id="add-category-btn" class="text-blue-500 hover:text-blue-700 text-lg">
+                                            <i class="fas fa-plus-circle"></i>
+                                        </button>
+                                    </div>
+                                    <div id="label-list" class="space-y-1">
+                                        <div class="text-center py-10 text-gray-500" id="loading-indicator">Loading Categories...</div>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div class="p-4 border-t border-gray-200">
+                                <div class="flex items-center space-x-3">
+                                    <div class="w-10 h-10 rounded-full bg-blue-600 flex items-center justify-center text-white font-bold text-lg">A</div>
+                                    <div>
+                                        <p class="font-semibold text-gray-800">Admin User</p>
+                                        <p class="text-xs text-gray-500">Super Admin</p>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Category Manager Main Content -->
+                        <div class="flex-1 flex flex-col overflow-hidden">
+                            <!-- Header -->
+                            <header class="bg-white border-b border-gray-200 p-4 flex justify-between items-center flex-shrink-0">
+                                <div>
+                                    <h2 class="text-lg font-semibold text-gray-800" id="current-selection">Select a category</h2>
+                                    <p class="text-sm text-gray-500" id="entity-id">No item selected</p>
+                                </div>
+                                <div class="flex space-x-2">
+                                    <button id="delete-btn" class="px-4 py-2 bg-red-600 hover:bg-red-700 rounded-lg text-white font-semibold flex items-center disabled:bg-gray-400 disabled:cursor-not-allowed" disabled>
+                                        <i class="fas fa-trash-alt mr-2"></i>
+                                        <span>Delete</span>
+                                    </button>
+                                    <button id="save-btn" class="px-4 py-2 bg-blue-600 hover:bg-blue-700 rounded-lg text-white font-semibold flex items-center disabled:bg-gray-400 disabled:cursor-not-allowed" disabled>
+                                        <i class="fas fa-save mr-2"></i>
+                                        <span id="save-btn-text">Save Changes</span>
+                                    </button>
+                                </div>
+                            </header>
+
+                            <!-- Translation Content -->
+                            <main id="main-content" class="flex-1 overflow-y-auto p-6 bg-gray-50">
+                                <div id="translation-workspace" class="hidden">
+                                    <div class="flex border-b border-gray-200 mb-6 overflow-x-auto">
+                                        <div id="language-tabs-container" class="flex space-x-4"></div>
+                                        <button id="add-language-btn" class="ml-4 text-blue-600 hover:text-blue-800 flex items-center whitespace-nowrap">
+                                            <i class="fas fa-plus-circle mr-1"></i> Add Language
+                                        </button>
+                                    </div>
+                                    <div class="grid grid-cols-1 gap-6 max-w-3xl mx-auto">
+                                        <div class="translation-card bg-white p-6 rounded-lg shadow-sm border border-gray-200">
+                                            <div class="flex items-center justify-between mb-4">
+                                                <h3 class="text-lg font-semibold text-gray-800" id="field-title">Category Name</h3>
+                                                <span id="translation-status-badge" class="status-badge"></span>
+                                            </div>
+                                            <div class="mb-4">
+                                                <label class="block text-sm font-medium text-gray-700 mb-1">Original (English)</label>
+                                                <div id="original-name" class="bg-gray-100 p-3 rounded-md border border-gray-200 text-gray-800 min-h-[44px]"></div>
+                                            </div>
+                                            <div>
+                                                <label for="translated-name" class="block text-sm font-medium text-gray-700 mb-1">Translation</label>
+                                                <input type="text" id="translated-name" class="w-full p-3 border border-gray-300 rounded-lg" placeholder="Enter translation...">
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                                <div id="placeholder-view" class="flex items-center justify-center h-full">
+                                    <div class="text-center text-gray-500">
+                                        <i class="fas fa-hand-pointer fa-3x mb-4"></i>
+                                        <h3 class="text-xl font-semibold">Select an item from the list</h3>
+                                        <p>Choose or create a category to start managing translations.</p>
+                                    </div>
+                                </div>
+                            </main>
+                        </div>
+                    </div>
+                </div>
+                
+                <div id="businesses-page" class="page-content hidden">
+                    <div class="bg-white p-8 rounded-lg shadow-md text-center">
+                        <i class="fas fa-briefcase text-5xl text-gray-400 mb-4"></i>
+                        <h3 class="text-2xl font-bold text-gray-700">TGI Business Manager</h3>
+                        <p class="text-gray-500 mt-2">This is where the interface for creating, viewing, updating, and deleting TGI business listings would be loaded.</p>
+                        <button class="mt-4 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700">Go to Business Manager</button>
+                    </div>
+                </div>
+
+                <div id="ads-page" class="page-content hidden">
+                    <div class="bg-white p-8 rounded-lg shadow-md text-center">
+                        <i class="fas fa-bullhorn text-5xl text-gray-400 mb-4"></i>
+                        <h3 class="text-2xl font-bold text-gray-700">Advertisement Manager</h3>
+                        <p class="text-gray-500 mt-2">This is where the interface for managing advertisements displayed in the directory would be loaded.</p>
+                        <button class="mt-4 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700">Go to Ad Manager</button>
+                    </div>
+                </div>
+            </main>
+        </div>
+    </div>
+
+    <!-- Modals (moved outside admin-layout for global overlay) -->
+    <div id="add-language-modal" class="fixed inset-0 bg-black bg-opacity-50 items-center justify-center z-50 hidden modal">
+        <div class="bg-white rounded-lg p-6 w-full max-w-md shadow-2xl">
+            <h3 class="text-lg font-semibold mb-4">Add New Language</h3>
+            <select id="language-select" class="w-full p-3 border border-gray-300 rounded-lg mb-4">
+                <option value="">Select a language</option>
+                <option value="ja">Japanese</option><option value="ko">Korean</option><option value="vi">Vietnamese</option>
+                <option value="id">Indonesian</option><option value="hi">Hindi</option>
+            </select>
+            <div class="flex justify-end space-x-2">
+                <button type="button" class="px-4 py-2 border rounded-lg text-gray-700 hover:bg-gray-100 modal-close-btn" data-modal-id="add-language-modal">Cancel</button>
+                <button id="confirm-add-language" class="px-4 py-2 bg-blue-600 hover:bg-blue-700 rounded-lg text-white">Add</button>
+            </div>
+        </div>
+    </div>
+    
+    <div id="add-category-modal" class="fixed inset-0 bg-black bg-opacity-50 items-center justify-center z-50 hidden modal">
+        <div class="bg-white rounded-lg p-6 w-full max-w-md shadow-2xl">
+            <h3 class="text-lg font-semibold mb-4">Create New Category</h3>
+            <input type="text" id="new-category-name" class="w-full p-3 border border-gray-300 rounded-lg mb-4" placeholder="Enter new category name (in English)">
+            <div class="flex justify-end space-x-2">
+                <button type="button" class="px-4 py-2 border rounded-lg text-gray-700 hover:bg-gray-100 modal-close-btn" data-modal-id="add-category-modal">Cancel</button>
+                <button id="confirm-add-category" class="px-4 py-2 bg-blue-600 hover:bg-blue-700 rounded-lg text-white">Create</button>
+            </div>
+        </div>
+    </div>
+
+    <div id="toast" class="fixed bottom-5 right-5 bg-gray-800 text-white px-6 py-3 rounded-lg shadow-lg opacity-0 transition-opacity duration-300 z-50"></div>
+
+<script>
+document.addEventListener('DOMContentLoaded', () => {
+    const loginOverlay = document.getElementById('login-overlay');
+    const loginForm = document.getElementById('login-form');
+    const adminLayout = document.getElementById('admin-layout');
+    const logoutBtn = document.getElementById('logout-btn');
+    const mainNav = document.getElementById('main-nav');
+    const pageTitle = document.getElementById('page-title');
+    const pageContents = document.querySelectorAll('.page-content');
+    
+    // --- AUTHENTICATION ---
+    const handleLogin = (e) => {
+        e.preventDefault();
+        // In a real app, you would validate credentials here with an API call.
+        // For this demo, we'll just simulate a successful login.
+        loginOverlay.style.display = 'none';
+        adminLayout.classList.remove('hidden');
+        // Simulate click on dashboard for initial load after login
+        document.querySelector('.sidebar-link[data-target="dashboard-page"]').click();
+    };
+
+    const handleLogout = () => {
+        adminLayout.classList.add('hidden');
+        loginOverlay.style.display = 'flex';
+    };
+
+    // --- CATEGORY MANAGER JS (Encapsulated) ---
+    let categoryManagerInitialized = false;
+
+    const setupCategoryManager = () => {
+        // Prevent re-initialization of event listeners and state
+        if (categoryManagerInitialized) {
+            // Re-render if state might have changed (e.g., after a delete)
+            renderLabels(dom.searchInput.value);
+            renderTranslationForm();
+            return;
+        }
+
+        // --- CONFIGURATION ---
+        // Removed API_BASE_URL as we are now using mock data.
+        // const API_BASE_URL = 'http://192.168.1.69:8000';
+
+        // --- STATE MANAGEMENT ---
+        let state = {
+            categories: [],
+            subCategories: {},
+            selectedItem: null,
+            selectedLang: 'en',
+            availableLanguages: [
+                { code: 'en', name: 'English' }, { code: 'my', name: 'Myanmar' },
+                { code: 'th', name: 'Thai' }, { code: 'zh', name: 'Chinese' },
+                { code: 'ja', name: 'Japanese' }, { code: 'ko', name: 'Korean' },
+                { code: 'vi', name: 'Vietnamese' }, { code: 'id', name: 'Indonesian' },
+                { code: 'hi', name: 'Hindi' }
+            ],
+            isLoading: false,
+        };
+        
+        // Mock data initialization
+        state.categories = [
+            { id: 'cat1', name: { en: 'Restaurants', my: 'စားသောက်ဆိုင်များ', th: 'ร้านอาหาร' } },
+            { id: 'cat2', name: { en: 'Hotels', my: 'ဟိုတယ်များ', th: 'โรงแรม' } },
+            { id: 'cat3', name: { en: 'Shopping', my: 'စျေးဝယ်', th: 'ช้อปปิ้ง' } },
+            { id: 'cat4', name: { en: 'Services', my: 'ဝန်ဆောင်မှုများ', th: 'บริการ' } },
+        ];
+
+        state.subCategories = {
+            'cat1': [
+                { id: 'sub1-1', category_id: 'cat1', name: { en: 'Local Cuisine', my: 'ဒေသအစားအစာ' } },
+                { id: 'sub1-2', category_id: 'cat1', name: { en: 'Fast Food', my: 'အမြန်စားအစားအစာ' } },
+            ],
+            'cat2': [
+                { id: 'sub2-1', category_id: 'cat2', name: { en: 'Luxury Hotels', my: 'ဇိမ်ခံဟိုတယ်များ' } },
+                { id: 'sub2-2', category_id: 'cat2', name: { en: 'Budget Stays', my: 'စျေးသက်သာသောနေရာများ' } },
+            ],
+        };
+
+        // Ensure available languages are sorted
+        state.availableLanguages.sort((a, b) => a.name.localeCompare(b.name));
+
+        // --- DOM ELEMENTS (Scoped to Category Manager) ---
+        const dom = {
+            labelList: document.getElementById('label-list'),
+            currentSelection: document.getElementById('current-selection'),
+            entityId: document.getElementById('entity-id'),
+            translationWorkspace: document.getElementById('translation-workspace'),
+            placeholderView: document.getElementById('placeholder-view'),
+            languageTabsContainer: document.getElementById('language-tabs-container'),
+            originalName: document.getElementById('original-name'),
+            translatedName: document.getElementById('translated-name'),
+            translationStatusBadge: document.getElementById('translation-status-badge'),
+            fieldTitle: document.getElementById('field-title'),
+            saveBtn: document.getElementById('save-btn'),
+            saveBtnText: document.getElementById('save-btn-text'),
+            deleteBtn: document.getElementById('delete-btn'),
+            searchInput: document.getElementById('search-input'),
+            loadingIndicator: document.getElementById('loading-indicator'),
+            addLanguageModal: document.getElementById('add-language-modal'),
+            addCategoryModal: document.getElementById('add-category-modal'),
+            toast: document.getElementById('toast'),
+            languageSelect: document.getElementById('language-select'),
+            newCategoryName: document.getElementById('new-category-name'),
+        };
+        
+        // --- MOCK API FUNCTIONS ---
+        // Simulate network delay
+        const mockDelay = () => new Promise(resolve => setTimeout(resolve, 500));
+
+        const fetchCategories = async () => {
+            await mockDelay();
+            return JSON.parse(JSON.stringify(state.categories)); // Return a deep copy
+        };
+
+        const fetchSubCategories = async (catId) => {
+            await mockDelay();
+            return JSON.parse(JSON.stringify(state.subCategories[catId] || [])); // Return a deep copy
+        };
+
+        const createCategory = async (name) => {
+            await mockDelay();
+            const newId = `cat${Date.now()}`; // Simple unique ID
+            const newCategory = {
+                id: newId,
+                name: { en: name }
+            };
+            state.categories.push(newCategory);
+            state.subCategories[newId] = []; // Initialize empty subcategories
+            return JSON.parse(JSON.stringify(newCategory));
+        };
+
+        const updateCategory = async (id, data) => {
+            await mockDelay();
+            const index = state.categories.findIndex(c => c.id === id);
+            if (index !== -1) {
+                // Merge names, don't overwrite entire name object
+                state.categories[index].name = { ...state.categories[index].name, ...data.name };
+                return JSON.parse(JSON.stringify(state.categories[index]));
+            }
+            throw new Error('Category not found');
+        };
+
+        const deleteCategory = async (id) => {
+            await mockDelay();
+            state.categories = state.categories.filter(c => c.id !== id);
+            delete state.subCategories[id];
+            return null; // Simulate 204 No Content
+        };
+
+        const updateSubCategory = async (id, data) => {
+            await mockDelay();
+            for (const catId in state.subCategories) {
+                const subIndex = state.subCategories[catId].findIndex(s => s.id === id);
+                if (subIndex !== -1) {
+                    state.subCategories[catId][subIndex].name = { ...state.subCategories[catId][subIndex].name, ...data.name };
+                    return JSON.parse(JSON.stringify(state.subCategories[catId][subIndex]));
+                }
+            }
+            throw new Error('Sub-category not found');
+        };
+
+        const deleteSubCategory = async (id) => {
+            await mockDelay();
+            for (const catId in state.subCategories) {
+                state.subCategories[catId] = state.subCategories[catId].filter(s => s.id !== id);
+            }
+            return null; // Simulate 204 No Content
+        };
+
+        // --- RENDER FUNCTIONS ---
+        const renderLabels = (filter = '') => {
+            dom.labelList.innerHTML = '';
+            const filterLower = filter.toLowerCase();
+
+            const filteredCategories = state.categories.filter(cat => {
+                const catName = cat.name.en || `Category ${cat.id}`;
+                const subcategories = state.subCategories[cat.id] || [];
+                const hasVisibleSub = subcategories.some(sub => (sub.name.en || '').toLowerCase().includes(filterLower));
+                return catName.toLowerCase().includes(filterLower) || hasVisibleSub;
+            });
+
+            if (filteredCategories.length === 0 && !state.isLoading) {
+                dom.labelList.innerHTML = `<div class="text-center py-10 text-gray-500">No categories match your search.</div>`;
+                return;
+            } else if (state.isLoading) {
+                 dom.labelList.innerHTML = dom.loadingIndicator.outerHTML; // Show loading if no filtered categories and loading
+                 return;
+            }
+
+            filteredCategories.forEach(cat => {
+                const catName = cat.name.en || `Category ${cat.id}`;
+                const subcategories = state.subCategories[cat.id] || [];
+                
+                let subcategoriesHtml = subcategories
+                    .filter(sub => (sub.name.en || '').toLowerCase().includes(filterLower))
+                    .map(sub => `
+                        <div class="sublabel-item px-3 py-2 rounded-md cursor-pointer flex justify-between items-center ${state.selectedItem?.data.id === sub.id ? 'active' : ''}" data-type="subcategory" data-id="${sub.id}" data-parent-id="${cat.id}">
+                            <span>${sub.name.en || `Sub-category ${sub.id}`}</span>
+                        </div>
+                    `).join('');
+
+                const translationStatuses = state.availableLanguages.map(lang => 
+                    `<span class="status-badge ${cat.name[lang.code] ? 'status-translated' : 'status-empty'}">${lang.code.toUpperCase()}</span>`
+                ).join('');
+
+                const categoryHtml = `
+                    <div class="label-item px-3 py-2 rounded-md cursor-pointer ${state.selectedItem?.data.id === cat.id ? 'active' : ''}" data-type="category" data-id="${cat.id}">
+                        <div class="flex justify-between items-center">
+                            <span class="font-medium">${catName}</span>
+                            <div class="flex space-x-1">${translationStatuses}</div>
+                        </div>
+                    </div>
+                    ${subcategoriesHtml}
+                `;
+                dom.labelList.insertAdjacentHTML('beforeend', categoryHtml);
+            });
+        };
+        
+        const renderTranslationForm = () => {
+            if (!state.selectedItem) {
+                dom.translationWorkspace.classList.add('hidden');
+                dom.placeholderView.classList.remove('hidden');
+                dom.saveBtn.disabled = true;
+                dom.deleteBtn.disabled = true;
+                return;
+            }
+
+            dom.translationWorkspace.classList.remove('hidden');
+            dom.placeholderView.classList.add('hidden');
+            dom.saveBtn.disabled = false;
+            dom.deleteBtn.disabled = false;
+            
+            const { type, data } = state.selectedItem;
+            dom.currentSelection.textContent = `${data.name.en || 'Untitled'} (${type})`;
+            dom.entityId.textContent = `ID: ${data.id}`;
+            dom.fieldTitle.textContent = type === 'category' ? 'Category Name' : 'Sub-Category Name';
+
+            dom.languageTabsContainer.innerHTML = state.availableLanguages.map(lang => `
+                <div class="language-tab pb-2 font-medium cursor-pointer ${state.selectedLang === lang.code ? 'active' : ''}" data-lang="${lang.code}">
+                    <span>${lang.name}</span>
+                    <span class="status-badge ${data.name[lang.code] ? 'status-translated' : 'status-empty'} ml-1">${lang.code.toUpperCase()}</span>
+                </div>
+            `).join('');
+
+            dom.originalName.textContent = data.name.en || '';
+            dom.translatedName.value = data.name[state.selectedLang] || '';
+            dom.translatedName.disabled = state.selectedLang === 'en';
+            
+            const statusText = dom.translatedName.value ? 'Translated' : 'Empty';
+            dom.translationStatusBadge.textContent = statusText;
+            dom.translationStatusBadge.className = `status-badge status-${statusText.toLowerCase()}`;
+        };
+
+        // --- EVENT HANDLERS ---
+        const handleLabelClick = async (e) => {
+            const target = e.target.closest('[data-type]');
+            if (!target) return;
+            
+            const { type, id, parentId } = target.dataset;
+            let selectedData;
+
+            if (type === 'category') {
+                await loadSubCategories(id);
+                selectedData = state.categories.find(c => c.id === id);
+            } else {
+                selectedData = state.subCategories[parentId].find(s => s.id === id);
+            }
+            
+            state.selectedItem = { type, data: JSON.parse(JSON.stringify(selectedData)) };
+            state.selectedLang = 'en';
+            renderLabels(dom.searchInput.value); // Re-render labels to update active state
+            renderTranslationForm();
+        };
+
+        const handleSave = async () => {
+            if (!state.selectedItem || state.isLoading) return;
+
+            setLoading(true);
+            const { type, data } = state.selectedItem;
+            // Ensure data.name object exists for the selected language
+            if (!data.name) {
+                data.name = {};
+            }
+            data.name[state.selectedLang] = dom.translatedName.value;
+
+            try {
+                let updatedData;
+                if (type === 'category') {
+                    updatedData = await updateCategory(data.id, { name: data.name });
+                } else {
+                    updatedData = await updateSubCategory(data.id, { name: data.name });
+                }
+                if (updatedData) {
+                    // Update state with response from server
+                    if (type === 'category') {
+                        const index = state.categories.findIndex(c => c.id === data.id);
+                        if (index !== -1) state.categories[index] = updatedData;
+                    } else if (data.parentId && state.subCategories[data.parentId]) {
+                        const pIndex = state.subCategories[data.parentId].findIndex(s => s.id === data.id);
+                        if (pIndex !== -1) state.subCategories[data.parentId][pIndex] = updatedData;
+                    }
+                    state.selectedItem.data = updatedData;
+                    showToast('Changes saved successfully!', 'success');
+                    renderLabels(dom.searchInput.value);
+                    renderTranslationForm();
+                }
+            } catch (error) {
+                showToast('Failed to save changes.', 'error');
+            } finally {
+                setLoading(false);
+            }
+        };
+        
+        const handleDelete = async () => {
+            // Using a custom modal for confirmation instead of confirm()
+            showConfirmationModal(`Are you sure you want to delete "${state.selectedItem.data.name.en}"? This cannot be undone.`, async () => {
+                if (!state.selectedItem || state.isLoading) {
+                    return;
+                }
+                
+                setLoading(true, true);
+                const { type, data } = state.selectedItem;
+                
+                try {
+                    if (type === 'category') {
+                        await deleteCategory(data.id);
+                        // Remove category and its subcategories from state
+                        // The deleteCategory mock function already handles state update
+                    } else {
+                        await deleteSubCategory(data.id);
+                        // Remove subcategory from state
+                        // The deleteSubCategory mock function already handles state update
+                    }
+                    showToast(`${type} deleted successfully.`, 'success');
+                    state.selectedItem = null;
+                    initialize(); // Re-initialize to refresh data
+                } catch (error) {
+                    showToast(`Failed to delete ${type}.`, 'error');
+                } finally {
+                    setLoading(false, true);
+                }
+            });
+        };
+        
+        const handleAddCategory = async () => {
+            const name = dom.newCategoryName.value.trim();
+            if (!name) {
+                showToast('Category name cannot be empty.', 'error');
+                return;
+            }
+            
+            try {
+                const newCategory = await createCategory(name);
+                // state.categories.push(newCategory); // Already done by mock createCategory
+                showToast('Category created successfully!', 'success');
+                renderLabels();
+                closeModal('add-category-modal');
+                dom.newCategoryName.value = '';
+            } catch (error) {
+                showToast('Failed to create category.', 'error');
+            }
+        };
+
+        const handleAddLanguage = () => {
+            const langCode = dom.languageSelect.value;
+            if (!langCode) {
+                showToast('Please select a language.', 'error');
+                return;
+            }
+            if (state.availableLanguages.some(l => l.code === langCode)) {
+                showToast('Language already exists.', 'error');
+                return;
+            }
+
+            const langName = dom.languageSelect.options[dom.languageSelect.selectedIndex].text;
+            state.availableLanguages.push({ code: langCode, name: langName });
+            // Sort languages alphabetically by name
+            state.availableLanguages.sort((a, b) => a.name.localeCompare(b.name));
+            renderTranslationForm();
+            closeModal('add-language-modal');
+        };
+
+        // --- UTILITY & ASYNC LOGIC ---
+        const setLoading = (isLoading, isDeleting = false) => {
+            state.isLoading = isLoading;
+            const button = isDeleting ? dom.deleteBtn : dom.saveBtn;
+            const buttonText = isDeleting ? 'Delete' : 'Save Changes';
+            
+            button.disabled = isLoading || !state.selectedItem; // Also disable if no item selected
+            button.querySelector('span').textContent = isLoading ? (isDeleting ? 'Deleting...' : 'Saving...') : buttonText;
+            const icon = button.firstElementChild;
+            if (icon) {
+                if (isLoading) {
+                    icon.classList.add('fa-spin');
+                } else {
+                    icon.classList.remove('fa-spin');
+                }
+            }
+        };
+        
+        const loadSubCategories = async (categoryId) => {
+            if (state.subCategories[categoryId] !== undefined && state.subCategories[categoryId].length > 0) return; // Already loaded or fetching
+            // Initialize to empty array if not present or empty to prevent re-fetching and indicate it's been handled
+            if (state.subCategories[categoryId] === undefined) {
+                state.subCategories[categoryId] = []; 
+            }
+            
+            try {
+                const subs = await fetchSubCategories(categoryId);
+                // Only update if the fetch returns data, otherwise keep it as empty if already empty
+                if (subs.length > 0) {
+                     state.subCategories[categoryId] = subs.map(s => ({ ...s, parentId: categoryId }));
+                }
+               
+            } catch (error) {
+                console.error(`Failed to load sub-categories for ${categoryId}`, error);
+                showToast('Could not load sub-categories.', 'error');
+            }
+        };
+
+        const showToast = (message, type = 'success') => {
+            dom.toast.textContent = message;
+            dom.toast.className = `fixed bottom-5 right-5 text-white px-6 py-3 rounded-lg shadow-lg z-50 transition-opacity duration-300 opacity-100 ${type === 'success' ? 'bg-green-600' : 'bg-red-600'}`;
+            setTimeout(() => { dom.toast.style.opacity = '0'; }, 3000);
+        };
+
+        const openModal = (modalId) => document.getElementById(modalId).classList.replace('hidden', 'flex');
+        const closeModal = (modalId) => document.getElementById(modalId).classList.replace('flex', 'hidden');
+
+        // Custom confirmation modal (replaces browser's confirm)
+        const showConfirmationModal = (message, onConfirm) => {
+            const modalHtml = `
+                <div id="confirmation-modal" class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-[1000] modal">
+                    <div class="bg-white rounded-lg p-6 w-full max-w-sm shadow-2xl">
+                        <h3 class="text-lg font-semibold mb-4">Confirm Action</h3>
+                        <p class="text-gray-700 mb-6">${message}</p>
+                        <div class="flex justify-end space-x-2">
+                            <button type="button" class="px-4 py-2 border rounded-lg text-gray-700 hover:bg-gray-100" id="cancel-confirm-btn">Cancel</button>
+                            <button class="px-4 py-2 bg-red-600 hover:bg-red-700 rounded-lg text-white" id="confirm-action-btn">Confirm</button>
+                        </div>
+                    </div>
+                </div>
+            `;
+            document.body.insertAdjacentHTML('beforeend', modalHtml);
+            const confirmModal = document.getElementById('confirmation-modal');
+            confirmModal.querySelector('#cancel-confirm-btn').addEventListener('click', () => confirmModal.remove());
+            confirmModal.querySelector('#confirm-action-btn').addEventListener('click', () => {
+                onConfirm();
+                confirmModal.remove();
+            });
+        };
+
+
+        // --- INITIALIZATION ---
+        const initialize = async () => {
+            dom.loadingIndicator.style.display = 'block';
+            dom.labelList.innerHTML = '';
+            dom.translationWorkspace.classList.add('hidden');
+            dom.placeholderView.classList.remove('hidden');
+            dom.saveBtn.disabled = true;
+            dom.deleteBtn.disabled = true;
+
+            try {
+                // Fetch categories from mock data
+                state.categories = await fetchCategories(); 
+                dom.loadingIndicator.style.display = 'none';
+                renderLabels();
+                renderTranslationForm();
+            } catch(error) {
+                dom.loadingIndicator.innerHTML = 'Failed to load categories. <br> Please check API connection and refresh.';
+            }
+        };
+
+        // Event Listeners for Category Manager specific elements
+        dom.labelList.addEventListener('click', handleLabelClick);
+        dom.languageTabsContainer.addEventListener('click', (e) => {
+            const target = e.target.closest('[data-lang]');
+            if (target) { state.selectedLang = target.dataset.lang; renderTranslationForm(); }
+        });
+        dom.saveBtn.addEventListener('click', handleSave);
+        dom.deleteBtn.addEventListener('click', handleDelete);
+        dom.searchInput.addEventListener('input', (e) => renderLabels(e.target.value));
+
+        // Modal Listeners for Category Manager
+        document.getElementById('add-language-btn').addEventListener('click', () => openModal('add-language-modal'));
+        document.getElementById('add-category-btn').addEventListener('click', () => openModal('add-category-modal'));
+        document.querySelectorAll('.modal-close-btn').forEach(btn => {
+            btn.addEventListener('click', () => closeModal(btn.dataset.modalId));
+        });
+        document.getElementById('confirm-add-language').addEventListener('click', handleAddLanguage);
+        document.getElementById('confirm-add-category').addEventListener('click', handleAddCategory);
+        
+        initialize(); // Initial call to load categories when the manager is first opened
+        categoryManagerInitialized = true; // Mark as initialized
+    };
+
+    // --- MAIN DASHBOARD NAVIGATION ---
+    const handleNavigation = (e) => {
+        e.preventDefault();
+        const link = e.target.closest('.sidebar-link');
+        if (!link) return;
+
+        // Update active link styling
+        document.querySelectorAll('.sidebar-link').forEach(l => l.classList.remove('active'));
+        link.classList.add('active');
+
+        // Update page title
+        pageTitle.textContent = link.querySelector('span').textContent;
+
+        // Show the correct page content
+        const targetId = link.dataset.target;
+        pageContents.forEach(page => {
+            if (page.id === targetId) {
+                page.classList.remove('hidden');
+                if (targetId === 'categories-page') {
+                    setupCategoryManager(); // Initialize Category Manager when its page is active
+                }
+            } else {
+                page.classList.add('hidden');
+            }
+        });
+    };
+
+    // --- MAIN DASHBOARD EVENT LISTENERS ---
+    loginForm.addEventListener('submit', handleLogin);
+    logoutBtn.addEventListener('click', handleLogout);
+    mainNav.addEventListener('click', handleNavigation);
+
+    // Initial load for dashboard page (after login by default)
+    // Removed the automatic click, as handleLogin now triggers it.
+});
+</script>
+</body>
+</html>

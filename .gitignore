@@ -1,0 +1,16 @@
+# Ignore python virtual environments
+venv/
+.venv/
+__pycache__/
+*.pyc
+
+# Ignore local configuration and secrets
+.env
+
+# Ignore SQLite databases
+*.db
+*.sqlite3
+
+# Ignore uploaded user images
+uploads/
+backend_code.txt
